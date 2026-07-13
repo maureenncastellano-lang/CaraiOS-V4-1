@@ -376,6 +376,36 @@ class BudgetTracker:
 
 # ── Prompt Injection Scanner ──────────────────────────────────────────────────
 
+class ExecutionPermissionGuard:
+    """A strict execution-permission gate for tool actions."""
+
+    def __init__(self):
+        self.scanner = PromptInjectionScanner()
+
+    def can_execute(self, agent: AgentIdentity, action: str,
+                    action_input: str, context: Optional[dict] = None) -> tuple[bool, str]:
+        cap_required = ACTION_TO_CAP.get(action)
+        if cap_required is None:
+            return True, "no capability required"
+
+        if cap_required in ALWAYS_BLOCKED_CAPS:
+            return False, f"capability '{cap_required}' is permanently blocked"
+
+        clean, threat = self.scanner.scan(action_input, source=f"action:{action}")
+        if not clean:
+            return False, f"prompt injection blocked: {threat}"
+
+        if not agent.has_cap(cap_required):
+            return False, (
+                f"permission denied: agent trust_level={agent.trust_level.name} lacks capability '{cap_required}'"
+            )
+
+        if cap_required in HITL_REQUIRED_CAPS:
+            return False, f"capability '{cap_required}' requires human approval"
+
+        return True, "permission granted"
+
+
 class PromptInjectionScanner:
     """
     Scans tool outputs and user inputs for prompt injection attempts.
@@ -520,6 +550,7 @@ class PolicyEngine:
 
     def __init__(self, audit: UCIPAuditLogger):
         self.audit = audit
+        self.guard = ExecutionPermissionGuard()
 
     def evaluate(self, agent: AgentIdentity, action: str,
                  action_input: str, budget: BudgetTracker,
@@ -559,19 +590,14 @@ class PolicyEngine:
         if not clean:
             return _deny(f"prompt injection blocked: {threat}")
 
-        # ── Step 3: Capability check ──────────────────────────────────────
-        if not agent.has_cap(cap_required):
-            return _deny(
-                f"agent trust_level={agent.trust_level.name} lacks capability '{cap_required}'"
-            )
+        # ── Step 3: Capability + permission guard ───────────────────────
+        allowed, reason = self.guard.can_execute(agent, action, action_input, context)
+        if not allowed:
+            if "requires human approval" in reason.lower():
+                return _escalate(reason)
+            return _deny(reason)
 
-        # ── Step 4: HITL gate ─────────────────────────────────────────────
-        if cap_required in HITL_REQUIRED_CAPS:
-            return _escalate(
-                f"capability '{cap_required}' requires human approval"
-            )
-
-        # ── Step 5: Budget checks ─────────────────────────────────────────
+        # ── Step 4: Budget checks ─────────────────────────────────────────
         if action in ("write_python", "write_bash", "write_node"):
             budget_err = budget.tick_execution(action)
             if budget_err:

@@ -355,6 +355,20 @@ TOOL_REGISTRY: dict[str, ToolContract] = {
 }
 
 
+def register_tool_contract(contract: ToolContract) -> ToolContract:
+    """Register a plugin-defined tool contract without editing the core registry."""
+    TOOL_REGISTRY[contract.name] = contract
+    return contract
+
+
+def get_tool_contract(action: str) -> Optional[ToolContract]:
+    return TOOL_REGISTRY.get(action)
+
+
+def list_tool_contracts() -> list[dict]:
+    return [contract.to_dict() for contract in TOOL_REGISTRY.values()]
+
+
 class ToolValidator:
     """
     Validates Brain-generated tool calls before they reach UCIP or Execution.
@@ -368,7 +382,7 @@ class ToolValidator:
         Returns (valid, error_message).
         """
         # 1. Tool must be registered
-        contract = TOOL_REGISTRY.get(action)
+        contract = get_tool_contract(action)
         if not contract:
             return False, f"Unknown tool: '{action}'. Valid tools: {list(TOOL_REGISTRY.keys())}"
 
@@ -404,8 +418,8 @@ class ToolValidator:
 
     @classmethod
     def get_contract(cls, action: str) -> Optional[ToolContract]:
-        return TOOL_REGISTRY.get(action)
+        return get_tool_contract(action)
 
     @classmethod
     def list_tools(cls) -> list[dict]:
-        return [c.to_dict() for c in TOOL_REGISTRY.values()]
+        return list_tool_contracts()

@@ -688,20 +688,7 @@ def list_agents(division: Optional[str] = None) -> list[dict]:
     return [a.to_dict() for a in agents]
 
 
-def get_best_agent_for_goal(goal: str) -> Optional[AgentPersona]:
-    """Heuristic: pick the best agent based on keywords in the goal.
-
-    Uses word-boundary regex matching, not naive substring containment.
-    Bug found and fixed in Session 13 (record.md): the naive `kw in
-    goal_lower` check let short keywords false-positive-match inside
-    unrelated words — "expo" (mobile-developer's keyword, for Expo/React
-    Native) matched inside "export", so any goal mentioning a CSV/data
-    "export" was silently misrouted to mobile-developer instead of
-    data-engineer. Word-boundary matching still allows multi-word phrases
-    ("react native") to match correctly as phrases; it only prevents a
-    short keyword from matching as a fragment of a longer, unrelated word.
-    """
-    goal_lower = goal.lower()
+def _build_routing_rules() -> list[tuple[list[str], str]]:
     rules = [
         (["growth hack", "viral loop", "acquisition channel", "conversion funnel", "marketing experiment"], "growth-hacker"),
         (["outbound", "cold email", "sales sequence", "prospect list", "lead generation"], "sales-outbound-strategist"),
@@ -712,14 +699,6 @@ def get_best_agent_for_goal(goal: str) -> Optional[AgentPersona]:
         (["react native", "expo", "mobile"], "mobile-developer"),
         (["react", "next.js", "nextjs", "vite", "frontend", "ui component", "tailwind"], "frontend-developer"),
         (["python", "script", "automation", "scrape", "crawler", "data pipeline", "etl pipeline"], "python-specialist"),
-        # security-engineer checked BEFORE backend-engineer deliberately (record.md
-        # Session 16): a goal like "fix a SQL injection in the login endpoint"
-        # contains both "sql"/"endpoint" (backend-engineer) and "injection"
-        # (security-engineer) — security-specific terms are a more specific and
-        # higher-priority signal than generic infra terms, so they need to be
-        # checked first, not just correctly matched (word-boundary matching from
-        # Session 13 fixed false substring matches; this fixes true-but-wrong
-        # priority when multiple rules genuinely match the same goal).
         (["security", "vulnerability", "auth", "injection", "xss", "csrf"], "security-engineer"),
         (["api", "backend", "database", "sql", "fastapi", "django", "endpoint"], "backend-engineer"),
         (["docker", "deploy the app", "deploy to production", "deployment pipeline", "nginx", "ci/cd", "devops"], "devops-engineer"),
@@ -732,35 +711,55 @@ def get_best_agent_for_goal(goal: str) -> Optional[AgentPersona]:
         (["full stack", "fullstack", "web app", "complete app"], "fullstack-engineer"),
         (["document", "readme", "docs", "tutorial", "guide"], "technical-writer"),
     ]
-    # Session 21: routing rules for the templated batch, derived from the
-    # same real per-agent keyword lists in _batch2_data.py rather than
-    # hand-duplicated here. Safe to simply append (not carefully position)
-    # thanks to Session 17's scoring rewrite — a rule's rank no longer
-    # depends on where it sits in this combined list, only on how
-    # specifically it matches the goal.
-    rules = rules + [(keywords, slug) for slug, _, _, _, _, _, keywords in _BATCH2]
-    # Scoring-based selection (record.md Session 17), replacing the original
-    # first-match-wins scan. Three separate bugs across Sessions 13 and 16
-    # all traced back to the same root cause: checking rules in list order
-    # means whichever rule happens to be *earlier* wins, even when a later
-    # rule is a more specific, more relevant match for the same goal (e.g.
-    # "SQL injection" containing both backend-engineer's generic "sql" and
-    # security-engineer's specific "injection" — position decided it, not
-    # relevance). Every rule is now scored by the total specificity of its
-    # matched keywords — a keyword's specificity is its word count, so a
-    # 3-word phrase match is worth more than three separate 1-word matches,
-    # and the rule with the highest total score wins regardless of where
-    # it sits in the list. Ties keep the earlier rule (stable, predictable,
-    # and ties should be rare given the specificity weighting).
-    best_slug, best_score = None, 0
-    for keywords, slug in rules:
+    rules.extend((keywords, slug) for slug, _, _, _, _, _, keywords in _BATCH2)
+    return rules
+
+
+def _score_goal_against_rules(goal: str) -> list[dict]:
+    goal_lower = goal.lower()
+    matches = []
+    for keywords, slug in _build_routing_rules():
         matched = [kw for kw in keywords if re.search(rf"\b{re.escape(kw)}\b", goal_lower)]
         if not matched:
             continue
         score = sum(len(kw.split()) for kw in matched)
-        if score > best_score:
-            best_slug, best_score = slug, score
+        matches.append({"slug": slug, "matched": matched, "score": score})
+    return matches
+
+
+def get_best_agent_for_goal(goal: str) -> Optional[AgentPersona]:
+    """Select the most relevant worker persona for a goal.
+
+    The Brain scores every routing rule by the specificity of the matched
+    keywords, so multi-word phrases such as "react native" outrank a loose
+    collection of single-word matches. The highest-scoring persona wins; if
+    nothing matches, the caller can fall back to the generalist Brain.
+    """
+    best_slug, best_score = None, 0
+    for match in _score_goal_against_rules(goal):
+        if match["score"] > best_score:
+            best_slug, best_score = match["slug"], match["score"]
     return AGENT_LIBRARY.get(best_slug) if best_slug else None
+
+
+def describe_worker_selection(goal: str) -> str:
+    """Return a human-readable explanation of the worker-routing decision."""
+    matches = _score_goal_against_rules(goal)
+    if not matches:
+        return f"Routing decision: no worker persona matched '{goal}', so the Brain will fall back to the generalist Brain."
+
+    best_slug, best_score, matched_terms = None, 0, []
+    for match in matches:
+        if match["score"] > best_score:
+            best_slug, best_score, matched_terms = match["slug"], match["score"], match["matched"]
+
+    persona = AGENT_LIBRARY.get(best_slug)
+    persona_name = persona.name if persona else best_slug
+    terms = ", ".join(matched_terms)
+    return (
+        f"Routing decision: selected '{best_slug}' because the goal matched {terms} "
+        f"with a specificity score of {best_score}."
+    )
 
 
 def build_agent_system_prompt(agent: AgentPersona, base_prompt: str) -> str:
