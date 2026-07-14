@@ -126,13 +126,15 @@ function EditorPane({ tabPath, isSplit = false, onClose }) {
   if (!tabData) return (
     <div className="editor-empty">
       <div className="editor-empty-content">
-        <span className="editor-empty-icon">⚡</span>
-        <h3>DevOS IDE</h3>
-        <p>Open a file from the explorer, or press <kbd>Ctrl+P</kbd></p>
-        <p className="editor-empty-hint">
-          Ctrl+K — AI edit &nbsp;·&nbsp; Ctrl+Shift+C — Composer &nbsp;·&nbsp;
-          Ctrl+Shift+R — Flow &nbsp;·&nbsp; Ctrl+Shift+N — Scratch pad
-        </p>
+        <span className="editor-empty-badge">Built for focus</span>
+        <span className="editor-empty-icon">✦</span>
+        <h3>Start with clarity</h3>
+        <p>Open a file from the explorer, or press <kbd>Ctrl+P</kbd> to jump instantly.</p>
+        <div className="editor-empty-hints">
+          <span>Ctrl+K · AI edit</span>
+          <span>Ctrl+Shift+C · Composer</span>
+          <span>Ctrl+Shift+R · Flow</span>
+        </div>
       </div>
     </div>
   );

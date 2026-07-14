@@ -30,7 +30,15 @@ import "./devos-extra.css";
 const WS_BASE = (process.env.REACT_APP_BACKEND_URL || "http://localhost:3001")
   .replace("http://", "ws://").replace("https://", "wss://");
 
-const Spin = () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:"#8b949e",fontSize:12}}>Loading…</div>;
+const Spin = () => (
+  <div className="app-loading" role="status" aria-live="polite">
+    <div className="loading-orb" />
+    <div className="loading-copy">
+      <div className="loading-title">Preparing your workspace</div>
+      <div className="loading-subtitle">Syncing the systems that turn intent into momentum.</div>
+    </div>
+  </div>
+);
 
 // ── Hook: detect mobile ────────────────────────────────────
 function useIsMobile() {
@@ -285,11 +293,16 @@ export default function App() {
       {/* Title bar — desktop only */}
       {!isMobile && (
         <div className="title-bar">
-          <span className="title-logo">⚡ DevOS</span>
+          <div className="title-brand">
+            <span className="title-logo">◉ DevOS</span>
+            <span className="title-tag">Agentic product studio</span>
+          </div>
           <button className="title-palette-btn" onClick={() => setPaletteOpen(true)}>
-            🔍 Search files… <kbd>Ctrl+P</kbd>
+            <span className="title-search-icon">⌕</span>
+            <span>Search workspace</span>
+            <kbd>Ctrl+P</kbd>
           </button>
-          <span className="title-hint">Ctrl+K · Ctrl+Shift+C Composer · Ctrl+Shift+R Flow</span>
+          <span className="title-hint">AI edit · Composer · Flow · Terminal</span>
         </div>
       )}
 

@@ -41,12 +41,23 @@ export default function LoginScreen() {
 
   return (
     <div className="login-screen">
-      <form className="login-card" onSubmit={handleSubmit} aria-label="Sign in to Agency OS">
+      <div className="login-glow" />
+      <form className="login-card" onSubmit={handleSubmit} aria-label="Sign in to DevOS">
         <div className="login-brand">
-          <Terminal size={28} />
-          <span>Agency OS</span>
+          <div className="login-brand-mark">
+            <Terminal size={20} />
+          </div>
+          <div>
+            <div className="login-brand-title">DevOS</div>
+            <div className="login-brand-subtitle">The calm control center for ambitious teams</div>
+          </div>
         </div>
-        <p className="login-subtitle">Sign in to continue</p>
+        <p className="login-subtitle">Sign in to keep moving from idea to shipped product with clarity.</p>
+        <div className="login-highlights">
+          <span>⚡ AI-native editing</span>
+          <span>🧠 Multi-file planning</span>
+          <span>🚀 Flow automation</span>
+        </div>
 
         <label className="login-field">
           <span>Username</span>
@@ -84,7 +95,7 @@ export default function LoginScreen() {
 
         <button type="submit" className="login-submit" disabled={submitting}>
           {submitting ? <Loader size={14} className="spin-slow" /> : null}
-          {submitting ? "Signing in…" : "Sign in"}
+          {submitting ? "Entering workspace…" : "Access workspace"}
         </button>
       </form>
     </div>
