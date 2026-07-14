@@ -169,7 +169,7 @@ function EditorPane({ tabPath, isSplit = false, onClose }) {
                   const { default: flowFetch } = await import("../flow/FlowPanel");
                 } catch {}
                 // Push to Flow
-                const BASE = process.env.REACT_APP_BACKEND_URL || "http://localhost:3001";
+                const BASE = process.env.REACT_APP_CARAIOS_URL || "";
                 await fetch(`${BASE}/api/flow/scripts`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },

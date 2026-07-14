@@ -27,8 +27,9 @@ import "./App.css";
 import "./devos.css";
 import "./devos-extra.css";
 
-const WS_BASE = (process.env.REACT_APP_BACKEND_URL || "http://localhost:3001")
-  .replace("http://", "ws://").replace("https://", "wss://");
+const WS_BASE = process.env.REACT_APP_CARAIOS_URL
+  ? process.env.REACT_APP_CARAIOS_URL.replace("http://", "ws://").replace("https://", "wss://")
+  : "";
 
 const Spin = () => (
   <div className="app-loading" role="status" aria-live="polite">

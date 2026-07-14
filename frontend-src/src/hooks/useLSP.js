@@ -1,9 +1,9 @@
 import { useEffect, useRef, useCallback } from "react";
 import useStore from "../store/useStore";
 
-const WS_BASE = (process.env.REACT_APP_BACKEND_URL || "http://localhost:3001")
-  .replace("http://", "ws://")
-  .replace("https://", "wss://");
+const WS_BASE = process.env.REACT_APP_CARAIOS_URL
+  ? process.env.REACT_APP_CARAIOS_URL.replace("http://", "ws://").replace("https://", "wss://")
+  : "";
 
 // Languages that have LSP server support
 const LSP_LANGUAGES = new Set(["typescript", "javascript", "python", "css", "html"]);

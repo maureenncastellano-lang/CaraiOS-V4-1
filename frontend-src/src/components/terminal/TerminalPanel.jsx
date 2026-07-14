@@ -6,9 +6,9 @@ import "xterm/css/xterm.css";
 import { X } from "lucide-react";
 import useStore from "../../store/useStore";
 
-const WS_BASE = (process.env.REACT_APP_BACKEND_URL || "http://localhost:3001")
-  .replace("http://", "ws://")
-  .replace("https://", "wss://");
+const WS_BASE = process.env.REACT_APP_CARAIOS_URL
+  ? process.env.REACT_APP_CARAIOS_URL.replace("http://", "ws://").replace("https://", "wss://")
+  : "";
 
 export default function TerminalPanel() {
   const { terminalOpen, setTerminalOpen } = useStore();

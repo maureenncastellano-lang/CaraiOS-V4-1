@@ -6,16 +6,12 @@ import {
 } from "lucide-react";
 import { api } from "../../services/api";
 
-// Rewritten against the REAL backend (record.md Session 22). The previous
-// version had its own separate fetch client pointed at localhost:3001 (the
-// Node backend retired in Session 1) with a /api/flow prefix that never
-// existed on CaraiOS, plus field names (packages, schedule, scheduleType,
-// s.status) that don't match the real Script model at all. This version
-// uses the shared api.js client and the real field names
-// (schedule_type/schedule_value, is_active, no packages field), and
-// replaces the fake SSE-streaming run view (the backend doesn't stream --
-// POST /run returns {status:"queued"} immediately and results only show up
-// via GET /runs afterward) with real polling.
+// Rewritten against the real CaraiOS backend (record.md Session 22).
+// This file now uses the shared api.js client and the real Python/FastAPI
+// routes instead of the legacy client that assumed a separate localhost
+// server with a /api/flow prefix. It also uses the actual field names
+// returned by the backend (schedule_type/schedule_value, is_active) and
+// polls real run state instead of pretending to stream results.
 
 // -- Script Editor ------------------------------------------------
 function ScriptEditor({ script, onSave, onClose }) {

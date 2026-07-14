@@ -3,7 +3,10 @@ import { Zap, X, Check, ChevronDown, ChevronRight, FileText,
          AlertTriangle, Loader, Play, RotateCcw } from "lucide-react";
 import useStore from "../../store/useStore";
 
-const BASE = process.env.REACT_APP_BACKEND_URL || "http://localhost:3001";
+// Same origin is the default for the real Python/FastAPI backend
+// served by app.py. Only override this during local frontend-only dev
+// with REACT_APP_CARAIOS_URL.
+const BASE = process.env.REACT_APP_CARAIOS_URL || "";
 
 const RISK_COLORS = { low: "#3fb950", medium: "#d29922", high: "#f85149" };
 
