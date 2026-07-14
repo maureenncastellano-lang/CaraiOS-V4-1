@@ -75,7 +75,7 @@ async def search_files(req: FileSearchReq, request: Request, db=Depends(get_db))
 
 
 @router.get("/index/status")
-async def get_index_status(project_id: str = "default", request: Request, db=Depends(get_db)):
+async def get_index_status(request: Request, project_id: str = "default", db=Depends(get_db)):
     user = await get_current_user(request, db)
     service = FileService(user.id, project_id)
     tree = service.tree()
@@ -85,7 +85,7 @@ async def get_index_status(project_id: str = "default", request: Request, db=Dep
 
 
 @router.post("/index/reindex")
-async def reindex(project_id: str = "default", request: Request, db=Depends(get_db)):
+async def reindex(request: Request, project_id: str = "default", db=Depends(get_db)):
     user = await get_current_user(request, db)
     service = FileService(user.id, project_id)
     tree = service.tree()
